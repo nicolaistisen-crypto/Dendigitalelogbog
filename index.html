@@ -4,69 +4,156 @@
     <meta charset='UTF-8'>
     <meta name='viewport' content='width=device-width, initial-scale=1.0'>
     <title>Digital Logbog</title>
+    <script src='https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.3/html2pdf.bundle.min.js'></script>
     <style>
         body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
-            background-color: #f4f4f4;
+            font-family: 'Segoe UI', Tahoma, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f9fafb;
+            color: #333;
+            transition: background-color 0.3s, color 0.3s;
         }
-        h1 {
-            text-align: center;
-        }
-        .log-form {
-            background: #fff;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
-            max-width: 500px;
-            margin: auto;
-        }
-        input, textarea {
-            width: 100%;
-            padding: 10px;
-            margin: 10px 0;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-        }
-        button {
-            background-color: #28a745;
+        header {
+            background-color: #004080;
             color: white;
-            padding: 10px 15px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
+            padding: 20px;
+            text-align: center;
+            font-size: 1.8em;
+            font-weight: bold;
         }
-        button:hover {
-            background-color: #218838;
+        .container {
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 15px;
+            background: #fff;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            transition: background-color 0.3s, color 0.3s;
+        }
+        .log-form input, .log-form textarea {
+            width: 90%;
+            max-width: 400px;
+            display: block;
+            margin: 10px auto;
+            padding: 12px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 1em;
+            background-color: inherit;
+            color: inherit;
+        }
+        .log-form textarea {
+            resize: vertical;
+        }
+        .log-form button, .action-btn {
+            display: block;
+            margin: 15px auto;
+            background-color: #004080;
+            color: white;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 6px;
+            font-size: 1em;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            width: 90%;
+            max-width: 400px;
+        }
+        .log-form button:hover, .action-btn:hover {
+            background-color: #0066cc;
         }
         .entries {
             margin-top: 30px;
-            max-width: 600px;
-            margin-left: auto;
-            margin-right: auto;
         }
         .entry {
-            background: #fff;
+            background: #f1f5f9;
             padding: 15px;
-            margin-bottom: 10px;
-            border-radius: 6px;
-            box-shadow: 0 0 5px rgba(0,0,0,0.1);
+            margin-bottom: 15px;
+            border-radius: 8px;
+            border-left: 5px solid #004080;
+            word-wrap: break-word;
+            transition: background-color 0.3s, color 0.3s;
+        }
+        .entry strong {
+            font-size: 1.1em;
+            color: #004080;
+        }
+        .entry button {
+            background-color: #cc0000;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 10px;
+            margin-right: 10px;
+        }
+        .entry button.edit {
+            background-color: #004080;
+        }
+        .entry button.edit:hover {
+            background-color: #0066cc;
+        }
+        .entry button:hover {
+            background-color: #ff3333;
+        }
+
+        /* Dark mode styles */
+        body.dark {
+            background-color: #121212;
+            color: #e0e0e0;
+        }
+        body.dark header {
+            background-color: #1f1f1f;
+        }
+        body.dark .container {
+            background-color: #1f1f1f;
+            color: #e0e0e0;
+        }
+        body.dark .entry {
+            background-color: #2a2a2a;
+            border-left-color: #888;
+        }
+        body.dark .log-form input, body.dark .log-form textarea {
+            border-color: #555;
+        }
+
+        @media (max-width: 600px) {
+            header {
+                font-size: 1.4em;
+                padding: 15px;
+            }
+            .container {
+                margin: 10px;
+                padding: 10px;
+            }
+            .log-form input, .log-form textarea, .log-form button, .action-btn {
+                width: 100%;
+                max-width: none;
+            }
         }
     </style>
 </head>
 <body>
-    <h1>Digital Logbog</h1>
-    <div class='log-form'>
-        <input type='text' id='name' placeholder='Navn'>
-        <input type='date' id='date'>
-        <input type='text' id='activity' placeholder='Aktivitet'>
-        <input type='text' id='goals' placeholder='Mål'>
-        <textarea id='reflection' rows='6' placeholder='Refleksion - Hvad tager jeg med fra i dag?'></textarea>
-        <button onclick='saveEntry()'>Gem</button>
+    <header>Digital Logbog</header>
+    <div class='container'>
+        <div class='log-form'>
+            <input type='text' id='name' placeholder='Navn'>
+            <input type='date' id='date'>
+            <input type='text' id='activity' placeholder='Aktivitet'>
+            <input type='text' id='goals' placeholder='Mål'>
+            <textarea id='reflection' rows='6' placeholder='Refleksion - Hvad tager jeg med fra i dag?'></textarea>
+            <button onclick='saveEntry()'>Gem</button>
+        </div>
+        <div class='entries' id='entries'></div>
+        <button class='action-btn' onclick='exportToPDF()'>Eksporter til PDF</button>
+        <button class='action-btn' onclick='toggleDarkMode()'>Skift til Dark Mode</button>
     </div>
-    <div class='entries' id='entries'></div>
 
     <script>
+        let editIndex = null;
+
         function saveEntry() {
             const name = document.getElementById('name').value;
             const date = document.getElementById('date').value;
@@ -79,17 +166,18 @@
                 return;
             }
 
-            const entry = { name, date, activity, goals, reflection };
             let entries = JSON.parse(localStorage.getItem('logEntries')) || [];
-            entries.push(entry);
+
+            if (editIndex !== null) {
+                entries[editIndex] = { name, date, activity, goals, reflection };
+                editIndex = null;
+            } else {
+                entries.push({ name, date, activity, goals, reflection });
+            }
+
             localStorage.setItem('logEntries', JSON.stringify(entries));
 
-            document.getElementById('name').value = '';
-            document.getElementById('date').value = '';
-            document.getElementById('activity').value = '';
-            document.getElementById('goals').value = '';
-            document.getElementById('reflection').value = '';
-
+            clearForm();
             displayEntries();
         }
 
@@ -104,6 +192,7 @@
                                  <b>Aktivitet:</b> ${entry.activity}<br>
                                  <b>Mål:</b> ${entry.goals}<br>
                                  <b>Refleksion:</b> ${entry.reflection}<br>
+                                 <button class='edit' onclick='editEntry(${index})'>Rediger</button>
                                  <button onclick='deleteEntry(${index})'>Slet</button>`;
                 container.appendChild(div);
             });
@@ -114,6 +203,51 @@
             entries.splice(index, 1);
             localStorage.setItem('logEntries', JSON.stringify(entries));
             displayEntries();
+        }
+
+        function editEntry(index) {
+            let entries = JSON.parse(localStorage.getItem('logEntries')) || [];
+            const entry = entries[index];
+            document.getElementById('name').value = entry.name;
+            document.getElementById('date').value = entry.date;
+            document.getElementById('activity').value = entry.activity;
+            document.getElementById('goals').value = entry.goals;
+            document.getElementById('reflection').value = entry.reflection;
+            editIndex = index;
+        }
+
+        function clearForm() {
+            document.getElementById('name').value = '';
+            document.getElementById('date').value = '';
+            document.getElementById('activity').value = '';
+            document.getElementById('goals').value = '';
+            document.getElementById('reflection').value = '';
+        }
+
+        function toggleDarkMode() {
+            document.body.classList.toggle('dark');
+            const btn = document.querySelector('.action-btn:last-of-type');
+            if (document.body.classList.contains('dark')) {
+                btn.textContent = 'Skift til Lys Mode';
+            } else {
+                btn.textContent = 'Skift til Dark Mode';
+            }
+        }
+
+        function exportToPDF() {
+            const element = document.querySelector('.entries');
+            if (!element.innerHTML.trim()) {
+                alert('Ingen indlæg at eksportere!');
+                return;
+            }
+            const opt = {
+                margin: 0.5,
+                filename: 'logbog.pdf',
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2 },
+                jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
+            };
+            html2pdf().set(opt).from(element).save();
         }
 
         window.onload = function() {
